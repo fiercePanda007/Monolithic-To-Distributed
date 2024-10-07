@@ -2,10 +2,11 @@
   "name": "monolithic-to-distributed",
   "version": "1.0.0",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "dev": "node --watch  server.js"
+    "dev": "node --watch --env-file=.env server.js"
   },
   "author": "",
   "license": "ISC",
