@@ -4,6 +4,8 @@ import Post from "./../models/Post.js";
 import Notification from "./../models/Notification.js";
 import bcrypt from "bcryptjs/dist/bcrypt.js";
 import jwt from "jsonwebtoken";
+import { uploadCodeSnippet } from "./../services/minioService.js";
+const JWT_SECRET = process.env.JWT_SECRET || "fg736rr36rgy63";
 
 mongoose.connect("mongodb://localhost:27017/myDataBase");
 
@@ -59,6 +61,7 @@ export const createPost = async (req, res) => {
     });
 
     await newPost.save();
+
     return res
       .status(201)
       .json({ message: "Post created successfully", post: newPost });
@@ -69,11 +72,24 @@ export const createPost = async (req, res) => {
 
 export const getPosts = async (req, res) => {
   try {
+    // Fetch posts while excluding the current user's posts
     const posts = await Post.find({ userId: { $ne: req.user.userId } })
       .sort({ createdAt: -1 })
-      .limit(10);
+      .limit(20);
 
-    return res.status(200).json(posts);
+    // Reduce the array of posts into an object keyed by userId
+    const postsByUser = posts.reduce((acc, post) => {
+      // Check if the userId already exists in the accumulator object
+      if (!acc[post.userId]) {
+        // If not, create a new array that starts with the current post
+        acc[post.userId] = [];
+      }
+      // Append the current post to the array of posts for this userId
+      acc[post.userId].push(post);
+      return acc;
+    }, {});
+
+    return res.status(200).json(postsByUser);
   } catch (err) {
     return res.status(500).json({ message: "Server error" });
   }
@@ -113,5 +129,17 @@ export const getNotification = async (req, res) => {
     return res.status(200).json(notifications);
   } catch (err) {
     return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const uploadCode = async (req, res) => {
+  try {
+    const fileName = `snippet-${Date.now()}.txt`; // Logic for filename
+    const fileContent = req.body.fileContent; // Make sure this is a string
+    console.log(typeof fileContent);
+    await uploadCodeSnippet(fileContent, fileName);
+    res.send("Snippet uploaded successfully");
+  } catch (error) {
+    res.status(500).send("Failed to upload snippet: " + error.message);
   }
 };

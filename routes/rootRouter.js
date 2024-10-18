@@ -7,14 +7,16 @@ import {
   getPosts,
   createNotification,
   getNotification,
+  uploadCode,
 } from "../controllers/apiController.js";
 import authenticateToken from "./../middleWare/auth.js";
 
 router.post("/signup", signup);
 router.post("/signin", signin);
-router.post("/createPost", authenticateToken, createPost);
-router.get("/getPosts", authenticateToken, getPosts);
-router.post("/createNotification", authenticateToken, createNotification);
-router.get("/getNotification", authenticateToken, getNotification);
+router.post("/post", authenticateToken, createPost);
+router.get("/post", authenticateToken, getPosts);
+router.post("/notification", authenticateToken, createNotification);
+router.get("/notification", authenticateToken, getNotification);
+router.post("/code", uploadCode);
 
 export default router;
