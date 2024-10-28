@@ -156,7 +156,8 @@ export const getNotification = async (req, res) => {
   const userId = req.user.userId; // Assuming userId is available via JWT authentication middleware
 
   try {
-    const notifications = await Notification.find()
+    // Find notifications not created by the logged-in user and limit the results
+    const notifications = await Notification.find({ userId: { $ne: userId } })
       .populate("postId")
       .sort({ createdAt: -1 })
       .limit(100);
@@ -165,8 +166,8 @@ export const getNotification = async (req, res) => {
     const modifiedNotifications = notifications.map((notification) => {
       const isCleared = notification.clearedBy.includes(userId);
       return {
-        notifications, // Get the notification document data
-        isCleared, // Add a custom field indicating if the current user cleared this notification
+        ...notification.toObject(), // Convert Mongoose document to plain object to add custom fields
+        isCleared, // Custom field to indicate if the current user cleared this notification
       };
     });
 
@@ -189,18 +190,22 @@ export const uploadCode = async (req, res) => {
 };
 
 export const clearNotification = async (req, res) => {
-  const { id } = req.params;
-  const { user_id } = req.body;
+  const { user_id, _id } = req.body;
+  console.log("Received user_id:", user_id);
+  console.log("Received _id:", _id);
 
   try {
-    const notification = await Notification.findById(id);
+    const notification = await Notification.findById(_id);
 
     if (!notification) {
       return res.status(404).json({ message: "Notification not found" });
     }
 
-    if (!notification.clearedBy.includes(user_id)) {
-      notification.clearedBy.push(mongoose.Types.ObjectId(user_id));
+    // Convert `user_id` to ObjectId and check if it exists in `clearedBy`
+    const userObjectId = new mongoose.Types.ObjectId(user_id);
+
+    if (!notification.clearedBy.includes(userObjectId)) {
+      notification.clearedBy.push(userObjectId);
     } else {
       return res
         .status(400)
@@ -213,6 +218,7 @@ export const clearNotification = async (req, res) => {
       .status(200)
       .json({ message: "Notification cleared successfully", notification });
   } catch (error) {
+    console.error("Error in clearing notification:", error);
     return res.status(500).json({ message: "Server error", error });
   }
 };

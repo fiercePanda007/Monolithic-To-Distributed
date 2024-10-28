@@ -20,11 +20,11 @@ document
     })
       .then((response) => response.json())
       .then((data) => {
-        if (data.token) {
-          console.log(data.token);
+        if (data.token && data.userId) {
+          console.log(data);
           // Store the token in localStorage or session
           localStorage.setItem("jwtToken", data.token); // Use sessionStorage if you prefer
-          localStorage.setItem("userID", data.userId);
+          localStorage.setItem("userId", data.userId);
           window.location.href = "/dashboard.html"; // Redirect to a protected page
         } else {
           document.getElementById("message").innerText =

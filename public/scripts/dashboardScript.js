@@ -1,55 +1,86 @@
 // dashboard.js
 
-// Check for authentication token and redirect if missing
 if (!localStorage.getItem("jwtToken")) {
-  window.location.href = "signin.html"; // Ensure this is the correct path to your login page
+  window.location.href = "signin.html";
 }
 
-const apiBaseURL = "http://localhost:3000/api"; // Base URL for your API
-const jwtToken = localStorage.getItem("jwtToken"); // Retrieve the stored JWT token
+const apiBaseURL = "http://localhost:3000/api";
+const jwtToken = localStorage.getItem("jwtToken");
 const userId = localStorage.getItem("userId");
-
-console.log(userId); //
+console.log(userId);
 
 // Logout functionality
 document.getElementById("logoutButton").addEventListener("click", function () {
-  localStorage.removeItem("jwtToken"); // Clear the JWT token from storage
-  window.location.href = "signin.html"; // Redirect to the signin page
+  localStorage.removeItem("jwtToken");
+  localStorage.removeItem("userId");
+  window.location.href = "signin.html";
 });
-
-// Fetch and display notifications
-function fetchNotifications() {
-  const message = "You have a new notification";
-  fetch(`${apiBaseURL}/notification`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${jwtToken}`,
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Failed to fetch notifications");
-      }
-      return response.json();
-    })
-    .then((notifications) => {
-      const notificationBox = document.getElementById("notificationBox");
-      notificationBox.innerHTML = ""; // Clear previous notifications
-      notifications.forEach((notification) => {
-        const div = document.createElement("div");
-        div.textContent = JSON.stringify(notification, null, 2);
-        div.className = "notification-item";
-        notificationBox.appendChild(div);
-      });
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-      document.getElementById("notificationBox").textContent =
-        "Error loading notifications.";
+async function clearNotificationRequest(notificationId, userIdx) {
+  try {
+    const response = await fetch(`${apiBaseURL}/clearNotification`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ user_id: userIdx, _id: notificationId }),
     });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Notification cleared successfully:", data.message);
+    } else {
+      const errorData = await response.json();
+      console.error("Failed to clear notification:", errorData.message);
+    }
+  } catch (error) {
+    console.error("Server error while clearing notification:", error);
+  }
 }
 
-// Handle post creation
+async function fetchNotifications() {
+  try {
+    const response = await fetch(`${apiBaseURL}/notification`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${jwtToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch notifications");
+    }
+
+    const notifications = await response.json();
+
+    const notificationBox = document.getElementById("notificationBox");
+    notificationBox.innerHTML = "";
+
+    notifications
+      .filter((notification) => notification.isCleared === false)
+      .forEach((notification) => {
+        const div = document.createElement("div");
+        div.className = "notification-item";
+        div.innerHTML = `<strong>ID:</strong> ${notification._id} - ${notification.postId.content}`;
+
+        const closeButton = document.createElement("button");
+        closeButton.textContent = "X";
+        closeButton.className = "close-button";
+        closeButton.onclick = async () => {
+          div.remove();
+
+          await clearNotificationRequest(notification._id, userId);
+        };
+
+        div.appendChild(closeButton);
+        notificationBox.appendChild(div);
+      });
+  } catch (error) {
+    console.error("Error:", error);
+    document.getElementById("notificationBox").textContent =
+      "Error loading notifications.";
+  }
+}
+
 document
   .getElementById("createPostBtn")
   .addEventListener("click", function (event) {
@@ -67,8 +98,8 @@ document
         .then((response) => response.json())
         .then((data) => {
           console.log(data.message);
-          document.getElementById("postContent").value = ""; // Clear the textarea
-          fetchPosts(); // Refresh the posts list
+          document.getElementById("postContent").value = "";
+          fetchPosts();
         })
         .catch((error) => console.error("Error posting:", error));
     } else {
@@ -76,7 +107,6 @@ document
     }
   });
 
-// Fetch and display posts
 function fetchPosts() {
   fetch(`${apiBaseURL}/post`, {
     method: "GET",
@@ -92,38 +122,31 @@ function fetchPosts() {
     })
     .then((postsByUser) => {
       const postsContainer = document.getElementById("postsContainer");
-      postsContainer.innerHTML = ""; // Clear existing posts
+      postsContainer.innerHTML = "";
 
-      // Loop over each user ID key to access posts
       Object.keys(postsByUser).forEach((userId) => {
         postsByUser[userId].forEach((post) => {
-          // Create a container for each post
           const postDiv = document.createElement("div");
           postDiv.className = "post-item";
 
-          // Create an element for the user ID
           const userIdDiv = document.createElement("div");
           userIdDiv.textContent = `User ID: ${userId}`;
           userIdDiv.className = "post-userId";
 
-          // Create an element for the post content
           const contentDiv = document.createElement("div");
           contentDiv.textContent = `Content: ${post.content}`;
           contentDiv.className = "post-content";
 
-          // Create an element for the creation date
           const createdAtDiv = document.createElement("div");
           createdAtDiv.textContent = `Created at: ${new Date(
             post.createdAt
           ).toLocaleString()}`;
           createdAtDiv.className = "post-created-at";
 
-          // Append all details to the post container
           postDiv.appendChild(userIdDiv);
           postDiv.appendChild(contentDiv);
           postDiv.appendChild(createdAtDiv);
 
-          // Append the post container to the posts container
           postsContainer.appendChild(postDiv);
         });
       });
@@ -135,7 +158,6 @@ function fetchPosts() {
     });
 }
 
-// Initialize dashboard functions
 document.addEventListener("DOMContentLoaded", function () {
   fetchNotifications();
   fetchPosts();
