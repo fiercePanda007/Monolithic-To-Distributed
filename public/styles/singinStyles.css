@@ -13,6 +13,7 @@ body {
   padding: 20px;
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 400px;
 }
 
 form {
@@ -20,12 +21,13 @@ form {
   flex-direction: column;
 }
 
-input[type="text"],
+input[type="email"],
 input[type="password"] {
   padding: 10px;
   margin: 10px 0;
   border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 20px;
 }
 
 button {

@@ -7,6 +7,9 @@ if (!localStorage.getItem("jwtToken")) {
 
 const apiBaseURL = "http://localhost:3000/api"; // Base URL for your API
 const jwtToken = localStorage.getItem("jwtToken"); // Retrieve the stored JWT token
+const userId = localStorage.getItem("userId");
+
+console.log(userId); //
 
 // Logout functionality
 document.getElementById("logoutButton").addEventListener("click", function () {
@@ -16,6 +19,7 @@ document.getElementById("logoutButton").addEventListener("click", function () {
 
 // Fetch and display notifications
 function fetchNotifications() {
+  const message = "You have a new notification";
   fetch(`${apiBaseURL}/notification`, {
     method: "GET",
     headers: {
@@ -33,7 +37,7 @@ function fetchNotifications() {
       notificationBox.innerHTML = ""; // Clear previous notifications
       notifications.forEach((notification) => {
         const div = document.createElement("div");
-        div.textContent = notification.message;
+        div.textContent = JSON.stringify(notification, null, 2);
         div.className = "notification-item";
         notificationBox.appendChild(div);
       });

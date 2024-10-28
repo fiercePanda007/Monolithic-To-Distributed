@@ -24,6 +24,7 @@ document
           console.log(data.token);
           // Store the token in localStorage or session
           localStorage.setItem("jwtToken", data.token); // Use sessionStorage if you prefer
+          localStorage.setItem("userID", data.userId);
           window.location.href = "/dashboard.html"; // Redirect to a protected page
         } else {
           document.getElementById("message").innerText =

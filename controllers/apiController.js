@@ -32,19 +32,28 @@ export const signup = async (req, res) => {
 export const signin = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(400).json({ message: "Invalid credentials" });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    return res.status(200).json({
+      token,
+      userId: user._id,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error });
   }
-
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return res.status(400).json({ message: "Invalid credentials" });
-  }
-
-  const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "1h" });
-
-  return res.status(200).json({ token });
 };
 
 export const createPost = async (req, res) => {
@@ -62,9 +71,14 @@ export const createPost = async (req, res) => {
 
     await newPost.save();
 
-    return res
-      .status(201)
-      .json({ message: "Post created successfully", post: newPost });
+    // Instead of sending a response in newNotification, just await it
+    const notificationResult = await newNotification(newPost);
+
+    return res.status(201).json({
+      message: "Post created successfully",
+      post: newPost,
+      notification: notificationResult, // Add notification result to the response if needed
+    });
   } catch (err) {
     return res.status(500).json({ message: "Server error" });
   }
@@ -95,6 +109,25 @@ export const getPosts = async (req, res) => {
   }
 };
 
+export const newNotification = async (newPost) => {
+  const postId = newPost._id;
+  const userId = newPost.userId;
+
+  try {
+    const notification = new Notification({
+      postId,
+      userId,
+    });
+
+    await notification.save();
+
+    // Return the notification data, but do not send a response here
+    return notification;
+  } catch (err) {
+    throw new Error("Notification creation failed");
+  }
+};
+
 export const createNotification = async (req, res) => {
   const { postId, message } = req.body;
 
@@ -120,13 +153,24 @@ export const createNotification = async (req, res) => {
 };
 
 export const getNotification = async (req, res) => {
+  const userId = req.user.userId; // Assuming userId is available via JWT authentication middleware
+
   try {
     const notifications = await Notification.find()
       .populate("postId")
       .sort({ createdAt: -1 })
-      .limit(10);
+      .limit(100);
 
-    return res.status(200).json(notifications);
+    // Add a "cleared" field to each notification based on whether the user has cleared it
+    const modifiedNotifications = notifications.map((notification) => {
+      const isCleared = notification.clearedBy.includes(userId);
+      return {
+        notifications, // Get the notification document data
+        isCleared, // Add a custom field indicating if the current user cleared this notification
+      };
+    });
+
+    return res.status(200).json(modifiedNotifications);
   } catch (err) {
     return res.status(500).json({ message: "Server error" });
   }
@@ -141,5 +185,34 @@ export const uploadCode = async (req, res) => {
     res.send("Snippet uploaded successfully");
   } catch (error) {
     res.status(500).send("Failed to upload snippet: " + error.message);
+  }
+};
+
+export const clearNotification = async (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  try {
+    const notification = await Notification.findById(id);
+
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    if (!notification.clearedBy.includes(user_id)) {
+      notification.clearedBy.push(mongoose.Types.ObjectId(user_id));
+    } else {
+      return res
+        .status(400)
+        .json({ message: "Notification already cleared by this user" });
+    }
+
+    await notification.save();
+
+    return res
+      .status(200)
+      .json({ message: "Notification cleared successfully", notification });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error });
   }
 };

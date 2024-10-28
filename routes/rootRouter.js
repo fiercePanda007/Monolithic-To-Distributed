@@ -8,6 +8,7 @@ import {
   createNotification,
   getNotification,
   uploadCode,
+  clearNotification,
 } from "../controllers/apiController.js";
 import authenticateToken from "./../middleWare/auth.js";
 
@@ -18,5 +19,6 @@ router.get("/post", authenticateToken, getPosts);
 router.post("/notification", authenticateToken, createNotification);
 router.get("/notification", authenticateToken, getNotification);
 router.post("/code", uploadCode);
+router.post("/clearNotification", clearNotification);
 
 export default router;
