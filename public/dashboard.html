@@ -5,37 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard</title>
     <link rel="stylesheet" href="./styles/dashboardStyle.css" />
-    <!-- Link to the CSS file -->
   </head>
   <body>
     <div class="dashboard">
       <nav class="navbar">
-        <h1>Home</h1>
-        <button id="logoutButton">Logout</button>
-      </nav>
+        <h1>StackDownFlow.</h1>
 
-      <aside class="sidebar">
-        <h3>Notifications</h3>
-        <div id="notificationBox" class="notifications"></div>
-      </aside>
+        <!-- Notification Icon and Dropdown -->
+        <div class="notification-icon">
+          <span class="bell-icon" onclick="toggleNotification()">🔔</span>
+          <div id="notificationPopup" class="notification-popup">
+            <h3>Notifications</h3>
+            <div id="notificationBox" class="notifications"></div>
+          </div>
+        </div>
+      </nav>
 
       <main class="main-content">
         <section class="post-creation">
-          <h3>Create Post</h3>
+          <h3>Create Post / Upload Code Snippet</h3>
           <textarea
             id="postContent"
             placeholder="What's on your mind?"
           ></textarea>
+
+          <div class="code-options">
+            <label for="languageSelect">Choose Language:</label>
+            <select id="languageSelect">
+              <option value="c">C</option>
+              <option value="cpp">C++</option>
+              <option value="csharp">C#</option>
+              <option value="java">Java</option>
+              <option value="javascript">JavaScript</option>
+              <option value="python">Python</option>
+              <option value="ruby">Ruby</option>
+              <option value="swift">Swift</option>
+            </select>
+
+            <textarea
+              id="codeSnippet"
+              placeholder="Paste your code here..."
+              class="code-box"
+            ></textarea>
+
+            <label for="fileUpload" class="file-upload-label"
+              >Or,choose a file to upload</label
+            >
+            <input
+              type="file"
+              id="fileUpload"
+              class="file-upload"
+              accept=".txt,.c,.cpp,.cs,.java,.js,.py,.rb,.swift"
+            />
+          </div>
+
           <button id="createPostBtn">Post</button>
         </section>
+
         <section class="posts">
-          <h3>Recent Posts</h3>
+          <h3 class="posts-header">Recent Posts</h3>
           <div id="postsContainer"></div>
         </section>
       </main>
+
+      <!-- Footer with Logout Button -->
+      <footer class="footer">
+        <button id="logoutButton">Logout</button>
+      </footer>
     </div>
 
     <script src="./scripts/dashboardScript.js"></script>
-    <!-- Link to the JavaScript file -->
   </body>
 </html>

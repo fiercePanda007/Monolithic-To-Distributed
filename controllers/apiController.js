@@ -4,10 +4,16 @@ import Post from "./../models/Post.js";
 import Notification from "./../models/Notification.js";
 import bcrypt from "bcryptjs/dist/bcrypt.js";
 import jwt from "jsonwebtoken";
-import { uploadCodeSnippet } from "./../services/minioService.js";
+import {
+  uploadCodeSnippet,
+  getCodeSnippet,
+} from "./../services/minioService.js";
+import multer from "multer";
 const JWT_SECRET = process.env.JWT_SECRET || "fg736rr36rgy63";
 
 mongoose.connect("mongodb://localhost:27017/myDataBase");
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 export const signup = async (req, res) => {
   const { email, password } = req.body;
@@ -71,7 +77,6 @@ export const createPost = async (req, res) => {
 
     await newPost.save();
 
-    // Instead of sending a response in newNotification, just await it
     const notificationResult = await newNotification(newPost);
 
     return res.status(201).json({
@@ -179,13 +184,21 @@ export const getNotification = async (req, res) => {
 
 export const uploadCode = async (req, res) => {
   try {
-    const fileName = `snippet-${Date.now()}.txt`; // Logic for filename
-    const fileContent = req.body.fileContent; // Make sure this is a string
-    console.log(typeof fileContent);
+    const { postId } = req.body;
+    const file = req.file; // Access the uploaded file
+    if (!file) {
+      return res.status(400).send("No file uploaded.");
+    }
+
+    console.log(postId);
+
+    const fileName = `${postId}.txt`;
+    const fileContent = file.buffer;
+
     await uploadCodeSnippet(fileContent, fileName);
-    res.send("Snippet uploaded successfully");
+    res.send("File uploaded successfully");
   } catch (error) {
-    res.status(500).send("Failed to upload snippet: " + error.message);
+    res.status(500).send("Failed to upload file: " + error.message);
   }
 };
 
@@ -201,7 +214,6 @@ export const clearNotification = async (req, res) => {
       return res.status(404).json({ message: "Notification not found" });
     }
 
-    // Convert `user_id` to ObjectId and check if it exists in `clearedBy`
     const userObjectId = new mongoose.Types.ObjectId(user_id);
 
     if (!notification.clearedBy.includes(userObjectId)) {
@@ -220,5 +232,26 @@ export const clearNotification = async (req, res) => {
   } catch (error) {
     console.error("Error in clearing notification:", error);
     return res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const getCode = async (req, res) => {
+  const postId = req.query.postId;
+  console.log("getting Code");
+
+  try {
+    const fileStream = await getCodeSnippet(postId);
+
+    // Set appropriate headers for file download
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${postId}.txt"`
+    );
+    res.setHeader("Content-Type", "text/plain");
+
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error("Error in retrieving file:", error);
+    res.status(404).json({ message: "File not found" });
   }
 };

@@ -1,4 +1,8 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
 
 // Configure the AWS SDK to use MinIO
 const s3Client = new S3Client({
@@ -27,5 +31,24 @@ export const uploadCodeSnippet = async (fileContent, fileName) => {
     console.log("Sorryyyyy....");
     console.error(s3Err);
     throw s3Err;
+  }
+};
+
+export const getCodeSnippet = async (postId) => {
+  const fileName = `${postId}.txt`; // Construct the filename
+
+  const params = {
+    Bucket: "codesnippets", // Replace with your MinIO bucket name
+    Key: fileName,
+  };
+
+  try {
+    const command = new GetObjectCommand(params);
+    const data = await s3Client.send(command);
+
+    return data.Body; // This is a readable stream of the file
+  } catch (error) {
+    console.error("Error retrieving file from MinIO:", error);
+    throw new Error("File not found or retrieval failed");
   }
 };
