@@ -168,7 +168,6 @@ async function fetchPosts() {
 
 async function fetchCodeSnippet(postId) {
   try {
-    // Include postId as a query parameter
     const response = await fetch(
       `http://localhost:3000/api/code?postId=${postId}`,
       {
@@ -181,12 +180,26 @@ async function fetchCodeSnippet(postId) {
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
 
+    // Create the download link
     const link = document.createElement("a");
     link.href = url;
     link.download = `${postId}.txt`;
     link.textContent = `Download file for post ${postId}`;
 
-    return link;
+    // Read the blob as text to display the file content
+    const textContent = await blob.text();
+
+    // Create a <pre> element to display code nicely formatted
+    const codeDisplay = document.createElement("pre");
+    codeDisplay.textContent = textContent;
+    codeDisplay.className = "code-snippet";
+
+    // Wrap link and code content in a div to return
+    const container = document.createElement("div");
+    container.appendChild(link);
+    container.appendChild(codeDisplay);
+
+    return container;
   } catch (error) {
     console.error("Error fetching code snippet:", error);
     return null;
@@ -206,7 +219,7 @@ async function uploadCode(postId) {
       formData.append("file", fileUpload);
     } else if (codeSnippet) {
       const blob = new Blob([codeSnippet], { type: "text/plain" });
-      const fileName = `${postId}.txt`;
+      const fileName = `code-snippet-${postId}.txt`;
       formData.append("file", blob, fileName);
     }
 

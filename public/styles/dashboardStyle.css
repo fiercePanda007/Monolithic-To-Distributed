@@ -144,6 +144,7 @@ textarea {
   border: 1px solid #d0d7de;
   resize: vertical;
   margin-bottom: 16px;
+  font-size: 22px;
 }
 
 #languageSelect {
@@ -290,4 +291,12 @@ textarea {
   color: #ff6b6b;
   font-size: 16px;
   cursor: pointer;
+}
+.code-snippet {
+  background-color: #f4f4f4;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: monospace;
+  white-space: pre-wrap; /* Allows long lines to wrap */
 }
